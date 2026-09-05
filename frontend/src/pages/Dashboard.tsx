@@ -20,6 +20,7 @@ import KpiCards from "../components/KpiCards";
 import ProductionChart from "../components/ProductionChart";
 import ForecastPanel from "../components/ForecastPanel";
 import ActionsPanel from "../components/ActionsPanel";
+import ReservePanel from "../components/ReservePanel";
 
 export default function Dashboard() {
   const [mine, setMine] = useState<Mine | null>(null);
@@ -90,7 +91,19 @@ export default function Dashboard() {
             {mine ? `${mine.name}, ${mine.state}` : "Loading mine…"}
           </p>
         </div>
-        <DataHonestyBadge />
+        <div className="flex items-center gap-3">
+          {mine && (
+            <a
+              href={`/api/mines/${mine.id}/report.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded bg-white/10 px-3 py-2 text-xs font-medium text-gray-200 hover:bg-white/20"
+            >
+              Download PDF report
+            </a>
+          )}
+          <DataHonestyBadge />
+        </div>
       </header>
 
       {error && (
@@ -107,6 +120,12 @@ export default function Dashboard() {
         <MapView mine={mine} />
         <ProductionChart data={production} />
       </div>
+
+      {mine && (
+        <div className="mb-4">
+          <ReservePanel mineId={mine.id} />
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ForecastPanel

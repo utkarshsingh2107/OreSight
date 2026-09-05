@@ -1,0 +1,12 @@
+{
+  "total_geological_tonnage": 22000000.0,
+  "effective_accessible_reserve_tonnage": 16352294.0,
+  "accessibility_discount_pct": 25.7,
+  "tonnage_by_confidence": {
+    "Measured": 13093117.0,
+    "Indicated": 8906883.0,
+    "Inferred": 0
+  },
+  "bulk_density_t_per_m3": 3.7,
+  "note": "Synthetic block model calibrated to publicly disclosed geometry (strike length, depth, grade range) and globally rescaled to a believable total-reserve order of magnitude \u2014 not real MOIL borehole assays or a real reserve statement."
+}

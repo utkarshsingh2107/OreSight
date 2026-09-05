@@ -1,0 +1,122 @@
+[
+  {
+    "cutoff_grade": 8,
+    "tonnage": 22000000.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 10,
+    "tonnage": 22000000.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 12,
+    "tonnage": 22000000.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 14,
+    "tonnage": 22000000.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 16,
+    "tonnage": 22000000.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 18,
+    "tonnage": 21980207.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 20,
+    "tonnage": 21891138.0,
+    "avg_grade": 30.8
+  },
+  {
+    "cutoff_grade": 22,
+    "tonnage": 21604139.0,
+    "avg_grade": 31.0
+  },
+  {
+    "cutoff_grade": 24,
+    "tonnage": 20822312.0,
+    "avg_grade": 31.3
+  },
+  {
+    "cutoff_grade": 26,
+    "tonnage": 19179487.0,
+    "avg_grade": 31.8
+  },
+  {
+    "cutoff_grade": 28,
+    "tonnage": 16517319.0,
+    "avg_grade": 32.6
+  },
+  {
+    "cutoff_grade": 30,
+    "tonnage": 12830859.0,
+    "avg_grade": 33.6
+  },
+  {
+    "cutoff_grade": 32,
+    "tonnage": 8728745.0,
+    "avg_grade": 34.9
+  },
+  {
+    "cutoff_grade": 34,
+    "tonnage": 5111561.0,
+    "avg_grade": 36.2
+  },
+  {
+    "cutoff_grade": 36,
+    "tonnage": 2390013.0,
+    "avg_grade": 37.8
+  },
+  {
+    "cutoff_grade": 38,
+    "tonnage": 890688.0,
+    "avg_grade": 39.4
+  },
+  {
+    "cutoff_grade": 40,
+    "tonnage": 227620.0,
+    "avg_grade": 41.2
+  },
+  {
+    "cutoff_grade": 42,
+    "tonnage": 49483.0,
+    "avg_grade": 43.5
+  },
+  {
+    "cutoff_grade": 44,
+    "tonnage": 14845.0,
+    "avg_grade": 45.0
+  },
+  {
+    "cutoff_grade": 46,
+    "tonnage": 0,
+    "avg_grade": 0.0
+  },
+  {
+    "cutoff_grade": 48,
+    "tonnage": 0,
+    "avg_grade": 0.0
+  },
+  {
+    "cutoff_grade": 50,
+    "tonnage": 0,
+    "avg_grade": 0.0
+  },
+  {
+    "cutoff_grade": 52,
+    "tonnage": 0,
+    "avg_grade": 0.0
+  },
+  {
+    "cutoff_grade": 54,
+    "tonnage": 0,
+    "avg_grade": 0.0
+  }
+]
