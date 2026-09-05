@@ -80,60 +80,68 @@ Times are cumulative hours from hackathon start. Each block ends with a
 concrete, checkable **output** — if you don't have the output, do not move
 on to polish; fix the block first.
 
-### H0–1 — Setup
-- [ ] `git init`, repo skeleton: `backend/`, `frontend/`, `data/`, `ml/`, `docs/`
-- [ ] FastAPI app boots (`/health` returns 200); Vite React app boots
-- [ ] SQLite file created, one table stubbed
+### H0–1 — Setup ✅ DONE
+- [x] `git init`, repo skeleton: `backend/`, `frontend/`, `data/`, `ml/`, `docs/`
+- [x] FastAPI app boots (`/health` returns 200); Vite React app boots
+- [x] SQLite file created, one table stubbed
 - **Output:** both servers run locally, empty pages load
 
-### H1–4 — Synthetic data generator
-- [ ] `scripts/generate_synthetic.py`: daily production for Balaghat,
+### H1–4 — Synthetic data generator ✅ DONE
+- [x] `scripts/generate_synthetic.py`: daily production for Balaghat,
       2018–2026, scaled to be consistent with real MOIL published totals
       (see domain glossary #2–4), with a monsoon-suppression term driven by
       the real rainfall series, weekday effects, and randomized equipment
       downtime shocks
-- [ ] Write output to SQLite (`production_daily` table)
+- [x] Write output to SQLite (`production_daily` table)
 - **Output:** a CSV/DB table you can plot and it visibly dips every monsoon
+- **Note:** real rainfall came from Open-Meteo's ERA5 archive (2018 →
+  present, 21.83N/80.23E), not IMERG directly — same honesty story, cited
+  in `scripts/prepare_rainfall.py`. Real Balaghat coordinates and mine
+  facts came from public MOIL/GSI sources (see `scripts/seed.py` docstring).
 
-### H4–6 — Backend core API
-- [ ] `GET /mine` (Balaghat static metadata), `GET /production` (time series),
+### H4–6 — Backend core API ✅ DONE
+- [x] `GET /mine` (Balaghat static metadata), `GET /production` (time series),
       `GET /kpi` (latest actual vs target)
 - **Output:** `curl`/`/docs` shows real data coming back
 
-### H6–11 — Forecast model (the highest-value block — protect this time)
-- [ ] Feature engineering: lag features, rolling means, rainfall (real),
+### H6–11 — Forecast model (the highest-value block — protect this time) ✅ DONE
+- [x] Feature engineering: lag features, rolling means, rainfall (real),
       day-of-week/month, synthetic equipment-downtime flag
-- [ ] LightGBM quantile regression (P10/P50/P90), trained on the synthetic
+- [x] LightGBM quantile regression (P10/P50/P90), trained on the synthetic
       series
-- [ ] Shortfall probability: P(P50 forecast < monthly target), simple Monte
-      Carlo or quantile-based approximation
-- [ ] SHAP values for the point forecast → top 3–5 drivers ranked
-- [ ] `POST /forecast` returns fan-chart data + shortfall probability +
+- [x] Shortfall probability: Normal approximation from P10/P50/P90 vs
+      monthly target (documented approximation, not full Monte Carlo)
+- [x] SHAP values for the point forecast → top 3–5 drivers ranked
+- [x] `POST /forecast` returns fan-chart data + shortfall probability +
       driver list
 - **Output:** a real fan chart with real numbers and a real shortfall %
+- **Verified:** models cache in-process per mine; first call ~2.3s
+  (training), subsequent what-if calls ~0.1s. Shortfall probability moves
+  from ~75% to ~99.8% across the rainfall slider range — see
+  `ml/pulse/forecast.py`.
 
-### H11–13 — Frontend shell + map + KPIs
-- [ ] Routing/layout, MapLibre view centered on Balaghat with one marker/polygon
-- [ ] KPI cards (actual vs target, shortfall probability)
-- [ ] Production history chart
+### H11–13 — Frontend shell + map + KPIs ✅ DONE
+- [x] Routing/layout, MapLibre view centered on Balaghat with one marker/polygon
+- [x] KPI cards (actual vs target, shortfall probability)
+- [x] Production history chart
 - **Output:** app looks like a product, not a form
 
-### H13–15 — Forecast UI + what-if slider
-- [ ] Fan chart component (ECharts) wired to `/forecast`
-- [ ] Driver panel showing SHAP bars
-- [ ] Rainfall what-if slider → re-POSTs with adjusted rainfall feature →
+### H13–15 — Forecast UI + what-if slider ✅ DONE
+- [x] Fan chart component (ECharts) wired to `/forecast`
+- [x] Driver panel showing SHAP bars
+- [x] Rainfall what-if slider → re-POSTs with adjusted rainfall feature →
       re-renders in < 3s
 - **Output:** moving the slider visibly moves the shortfall probability —
   this is your best demo moment, get it rock solid
 
-### H15–17 — Greedy prescriptive actions
-- [ ] A small candidate-action table (extra shift, redeploy equipment,
+### H15–17 — Greedy prescriptive actions ✅ DONE
+- [x] A small candidate-action table (extra shift, redeploy equipment,
       reduce a named downtime cause), each with a hand-justified/estimated
       Δtonnes and cost
-- [ ] Greedy ranking function: sort by Δtonnes (optionally per unit cost)
-- [ ] `POST /suggest-actions`, `POST /apply-action` → writes an audit log row
-- [ ] Frontend: "Suggest actions" button → ranked list → "Apply" → audit log
-      entry appears in a simple table
+- [x] Greedy ranking function: sort by Δtonnes (optionally per unit cost)
+- [x] `POST /suggest-actions`, `POST /apply-action` → writes an audit log row
+- [x] Frontend: "Suggest actions" button → ranked list → "Apply" → audit log
+      entry appears
 - **Output:** the full suggest→apply→audit loop works
 
 ### H17–20 — SLEEP (yes, even solo)
@@ -142,32 +150,47 @@ and presentation quality is a large share of the score. This is not optional
 time you can reclaim by cutting it — teams (and solo builders) who skip
 sleep make careless mistakes in exactly the parts judges are watching.
 
-### H20–23 — Static 3D block visual + grade-tonnage curve
-- [ ] Offline: generate a synthetic block model (simple 3D array with a
+⚠️ **Where we actually are:** the agent has built through H0–26 (setup,
+data, forecast model, frontend shell, what-if slider, actions/audit loop,
+reserve panel, PDF report, reset-demo button) ahead of the hour-by-hour
+order above, since this was done in one working session rather than real
+clock-time. Treat the checkboxes below as still-accurate for what's left:
+polish, stretch goals, rehearsal, and freeze. Use your *actual* remaining
+hours against those, not the original hour numbers.
+
+### H20–23 — Static 3D block visual + grade-tonnage curve ✅ DONE
+- [x] Offline: generate a synthetic block model (simple 3D array with a
       folded ore-band shape, grade values), render as a static image (matplotlib
       3D scatter/voxel plot or a plotly 3D export) — colored by grade
-- [ ] Grade-tonnage curve chart (tonnage above cutoff grade vs cutoff) from
+- [x] Grade-tonnage curve chart (tonnage above cutoff grade vs cutoff) from
       the same synthetic block model
-- [ ] Embed both in the frontend as a "Reserve" panel + your EAR number
+- [x] Embed both in the frontend as a "Reserve" panel + your EAR number
       (a single computed metric: geological tonnage × an accessibility
       discount factor you define and can explain)
 - **Output:** a credible-looking reserve visual, even if not interactive
+- **Note:** total/EAR tonnage is a globally-rescaled, disclosed-as-synthetic
+  number (`ml/prism/blockmodel.py`) — geometry (2.8km strike, ~450m depth)
+  is calibrated to real public Balaghat facts, but the absolute tonnage is
+  not a real MOIL reserve statement. Say this proactively in the demo.
 
-### H23–26 — PDF report
-- [ ] One WeasyPrint/ReportLab template: mine summary, forecast chart image,
+### H23–26 — PDF report ✅ DONE
+- [x] One WeasyPrint/ReportLab template: mine summary, forecast chart image,
       top drivers, suggested actions
-- [ ] `GET /report/pdf` generates and returns it
+- [x] `GET /mines/{id}/report.pdf` generates and returns it
 - **Output:** a real downloadable PDF with real numbers
 
-### H26–28 — Data-honesty + polish pass 1
-- [ ] Add the UI badge: *"Demo data: real rainfall + MOIL published
+### H26–28 — Data-honesty + polish pass 1 ✅ MOSTLY DONE
+- [x] Add the UI badge: *"Demo data: real rainfall + MOIL published
       production totals; synthetic daily detail calibrated to match."*
-- [ ] Loading states, empty states, no raw JSON errors on screen
+- [x] Loading states, empty states, no raw JSON errors on screen (basic
+      versions in place — re-check visually before presenting)
 - **Output:** nothing on screen looks broken or unexplained
 
 ### H28–30 — Full run-through + bug fixes
-- [ ] Run the entire demo script (see below) from a cold start, twice
-- [ ] Add a "reset demo" script/button that restores known-good DB state
+- [x] Add a "reset demo" button (`POST /api/admin/reset-demo` + header
+      button) that restores known-good DB state — tested working
+- [ ] Run the entire demo script (see below) from a cold start, twice —
+      **you still need to do this yourself, on your actual hardware**
 - **Output:** the demo runs twice in a row without manual fixes
 
 ### H30–33 — Stretch tier (only if you are genuinely ahead)
