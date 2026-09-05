@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Data (raw is large/re-downloadable; processed & synthetic are regenerable
+# but small enough and useful to keep for demo reproducibility)
+data/raw/*.json
+data/raw/*.tif
+data/raw/*.nc
+
+# DB
+*.db
+*.sqlite3
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
