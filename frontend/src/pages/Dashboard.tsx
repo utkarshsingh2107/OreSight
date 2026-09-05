@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import {
+  api,
   getMines,
   getKpi,
   getProduction,
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [actionsLoading, setActionsLoading] = useState(false);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     getMines()
@@ -75,6 +77,14 @@ export default function Dashboard() {
     applyAction(mine.id, action).then(() => getAuditLog(mine.id).then(setAuditLog));
   };
 
+  const handleResetDemo = () => {
+    setResetting(true);
+    api
+      .post("/admin/reset-demo")
+      .then(() => window.location.reload())
+      .catch(() => setResetting(false));
+  };
+
   const baselineRainfall =
     production.length > 0
       ? production
@@ -92,6 +102,13 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleResetDemo}
+            disabled={resetting}
+            className="rounded bg-white/10 px-3 py-2 text-xs font-medium text-gray-200 hover:bg-white/20 disabled:opacity-50"
+          >
+            {resetting ? "Resetting…" : "Reset demo"}
+          </button>
           {mine && (
             <a
               href={`/api/mines/${mine.id}/report.pdf`}
