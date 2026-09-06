@@ -16,12 +16,18 @@ import {
   type AuditEntry,
 } from "../api/client";
 import DataHonestyBadge from "../components/DataHonestyBadge";
+import ErrorBoundary from "../components/ErrorBoundary";
 import MapView from "../components/MapView";
 import KpiCards from "../components/KpiCards";
 import ProductionChart from "../components/ProductionChart";
 import ForecastPanel from "../components/ForecastPanel";
 import ActionsPanel from "../components/ActionsPanel";
 import ReservePanel from "../components/ReservePanel";
+import ProspectivityPanel from "../components/ProspectivityPanel";
+import EARExplainer from "../components/EARExplainer";
+import EOConstraintsPanel from "../components/EOConstraintsPanel";
+import ValidationMetrics from "../components/ValidationMetrics";
+import MethodologyModal from "../components/MethodologyModal";
 
 export default function Dashboard() {
   const [mine, setMine] = useState<Mine | null>(null);
@@ -34,6 +40,7 @@ export default function Dashboard() {
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [showMethodology, setShowMethodology] = useState(false);
 
   useEffect(() => {
     getMines()
@@ -93,72 +100,113 @@ export default function Dashboard() {
       : 5;
 
   return (
-    <div className="min-h-screen bg-[#0b0f14] p-6 text-gray-100">
-      <header className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">OreSight — खनिज दृष्टि</h1>
-          <p className="text-sm text-gray-400">
-            {mine ? `${mine.name}, ${mine.state}` : "Loading mine…"}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleResetDemo}
-            disabled={resetting}
-            className="rounded bg-white/10 px-3 py-2 text-xs font-medium text-gray-200 hover:bg-white/20 disabled:opacity-50"
-          >
-            {resetting ? "Resetting…" : "Reset demo"}
-          </button>
-          {mine && (
-            <a
-              href={`/api/mines/${mine.id}/report.pdf`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded bg-white/10 px-3 py-2 text-xs font-medium text-gray-200 hover:bg-white/20"
+    <div className="min-h-screen bg-[#0b0f14] text-gray-100">
+      <header className="sticky top-0 z-40 border-b border-gray-700 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/80 p-4 md:p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-lg md:text-xl font-bold text-white">OreSight — खनिज दृष्टि</h1>
+            <p className="text-xs md:text-sm text-gray-400">
+              {mine ? `${mine.name}, ${mine.state}` : "Loading mine…"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <button
+              onClick={() => setShowMethodology(true)}
+              className="rounded bg-blue-600/50 hover:bg-blue-600 px-2 md:px-3 py-1.5 md:py-2 text-xs font-medium text-white transition-colors"
+              title="View methodology and assumptions"
             >
-              Download PDF report
-            </a>
-          )}
-          <DataHonestyBadge />
+              ℹ️ Methodology
+            </button>
+            <button
+              onClick={handleResetDemo}
+              disabled={resetting}
+              className="rounded bg-white/10 hover:bg-white/20 px-2 md:px-3 py-1.5 md:py-2 text-xs font-medium text-gray-200 transition-colors disabled:opacity-50"
+            >
+              {resetting ? "Resetting…" : "Reset"}
+            </button>
+            {mine && (
+              <a
+                href={`/api/mines/${mine.id}/report.pdf`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded bg-white/10 hover:bg-white/20 px-2 md:px-3 py-1.5 md:py-2 text-xs font-medium text-gray-200 transition-colors"
+              >
+                📥 PDF
+              </a>
+            )}
+            <DataHonestyBadge />
+          </div>
         </div>
       </header>
 
-      {error && (
-        <div className="mb-4 rounded border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      <MethodologyModal isOpen={showMethodology} onClose={() => setShowMethodology(false)} />
 
-      <div className="mb-4">
-        <KpiCards kpi={kpi} />
-      </div>
+      <main className="p-4 md:p-6 space-y-4 md:space-y-6">
+        {error && (
+          <div className="rounded border border-red-500/40 bg-red-500/10 p-3 md:p-4 text-sm text-red-300">
+            {error}
+          </div>
+        )}
 
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <MapView mine={mine} />
-        <ProductionChart data={production} />
-      </div>
+        <ErrorBoundary>
+          <div className="mb-4 md:mb-6">
+            <KpiCards kpi={kpi} mineId={mine?.id} />
+          </div>
+        </ErrorBoundary>
 
-      {mine && (
-        <div className="mb-4">
-          <ReservePanel mineId={mine.id} />
-        </div>
-      )}
+        <ErrorBoundary>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <MapView mine={mine} />
+            <ProductionChart data={production} />
+          </div>
+        </ErrorBoundary>
 
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ForecastPanel
-          forecast={forecast}
-          baselineRainfall={baselineRainfall}
-          loading={forecastLoading}
-          onRainfallChange={(mm) => mine && loadForecast(mine.id, mm)}
-        />
-        <ActionsPanel
-          actions={actions}
-          auditLog={auditLog}
-          loading={actionsLoading}
-          onSuggest={handleSuggest}
-          onApply={handleApply}
-        />
-      </div>
+        {mine && (
+          <ErrorBoundary>
+            <div className="mb-4 md:mb-6">
+              <ReservePanel mineId={mine.id} />
+            </div>
+          </ErrorBoundary>
+        )}
+
+        <ErrorBoundary>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ForecastPanel
+              forecast={forecast}
+              baselineRainfall={baselineRainfall}
+              loading={forecastLoading}
+              onRainfallChange={(mm) => mine && loadForecast(mine.id, mm)}
+            />
+            <ActionsPanel
+              actions={actions}
+              auditLog={auditLog}
+              loading={actionsLoading}
+              onSuggest={handleSuggest}
+              onApply={handleApply}
+            />
+          </div>
+        </ErrorBoundary>
+
+        {/* Priority Features */}
+        {mine && (
+          <>
+            <ErrorBoundary>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <ProspectivityPanel mineId={mine.id} />
+                <EARExplainer mineId={mine.id} />
+              </div>
+            </ErrorBoundary>
+
+            <ErrorBoundary>
+              <EOConstraintsPanel mineId={mine.id} />
+            </ErrorBoundary>
+
+            <ErrorBoundary>
+              <ValidationMetrics mineId={mine.id} />
+            </ErrorBoundary>
+          </>
+        )}
+      </main>
     </div>
   );
 }
