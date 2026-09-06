@@ -45,6 +45,7 @@ class DriverOut(BaseModel):
     name: str
     impact: float
     direction: str  # "increases risk" / "decreases risk"
+    category: str  # "weather" / "equipment" / "operational" - Added Day 5
 
 
 class ForecastOut(BaseModel):
@@ -79,3 +80,55 @@ class AuditLogOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================================
+# EAR (Economically Accessible Reserve) Schemas
+# ============================================================================
+
+class AccessibilityFactors(BaseModel):
+    """Accessibility factors that reduce geological reserves to EAR"""
+    depth_factor: float
+    equipment_factor: float
+    climate_factor: float
+    infra_factor: float
+
+
+class IntermediateValues(BaseModel):
+    """Cascading reserve reductions through each factor"""
+    after_depth: float
+    after_equipment: float
+    after_climate: float
+    after_infra: float
+
+
+class EARBreakdownOut(BaseModel):
+    """Complete EAR breakdown response"""
+    geological_reserve_tonnes: float
+    factors: AccessibilityFactors
+    intermediate_values: IntermediateValues
+    effective_accessible_reserve_tonnes: float
+    accessibility_percentage: float
+
+
+class EquipmentScenario(BaseModel):
+    """Equipment fleet scenario"""
+    LHD: Optional[int] = None
+    dumper: Optional[int] = None
+
+
+class WeatherScenario(BaseModel):
+    """Weather scenario"""
+    monsoon_days: Optional[int] = None
+
+
+class InfrastructureScenario(BaseModel):
+    """Infrastructure scenario"""
+    haul_road_distance_km: Optional[float] = None
+
+
+class EARWhatIfRequest(BaseModel):
+    """What-if scenario for EAR calculation"""
+    equipment: Optional[EquipmentScenario] = None
+    weather: Optional[WeatherScenario] = None
+    infrastructure: Optional[InfrastructureScenario] = None
