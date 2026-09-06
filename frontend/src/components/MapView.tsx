@@ -1,16 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Mine } from "../api/client";
+import type { Mine, ProspectivityTarget } from "../api/client";
 
-type LayerType = "osm" | "satellite" | "geology" | "prospectivity" | "ndvi";
+const CONFIDENCE_COLORS: Record<string, string> = {
+  high: "#f59e0b",
+  medium: "#fb923c",
+  low: "#94a3b8",
+};
 
-export default function MapView({ mine }: { mine: Mine | null }) {
+export default function MapView({
+  mine,
+  allMines = [],
+  onSelectMine,
+  prospectivityTargets,
+}: {
+  mine: Mine | null;
+  allMines?: Mine[];
+  onSelectMine?: (mine: Mine) => void;
+  prospectivityTargets: ProspectivityTarget[];
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const [activeLayer, setActiveLayer] = useState<LayerType>("osm");
-  const [showProspects, setShowProspects] = useState(false);
-  const [showLineaments, setShowLineaments] = useState(false);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const mineMarkersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -26,203 +39,139 @@ export default function MapView({ mine }: { mine: Mine | null }) {
             tileSize: 256,
             attribution: "© OpenStreetMap contributors",
           },
-          satellite: {
-            type: "raster",
-            tiles: [
-              "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            ],
-            tileSize: 256,
-            attribution: "© Esri",
-          },
-          sentinel2: {
-            type: "raster",
-            tiles: [
-              "https://tiles.sentinel-hub.com/v1/wms?REQUEST=GetTile&BBOX={bbox}&WIDTH=256&HEIGHT=256&layers=TRUE_COLOR",
-            ],
-            tileSize: 256,
-            attribution: "© ESA Sentinel-2",
-          },
-          geology: {
-            type: "raster",
-            tiles: [
-              "https://tiles.example.com/geology/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "© GSI Geology Map",
-          },
-          prospectivity: {
-            type: "raster",
-            tiles: [
-              "https://tiles.example.com/prospectivity/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "© OreSight Prospectivity Model",
-          },
-          ndvi: {
-            type: "raster",
-            tiles: [
-              "https://tiles.example.com/ndvi/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "© Sentinel-2 NDVI",
-          },
         },
-        layers: [
-          { id: "osm", type: "raster", source: "osm", layout: { visibility: "visible" } },
-          { id: "satellite", type: "raster", source: "satellite", layout: { visibility: "none" } },
-          { id: "sentinel2", type: "raster", source: "sentinel2", layout: { visibility: "none" } },
-          { id: "geology", type: "raster", source: "geology", layout: { visibility: "none" }, paint: { "raster-opacity": 0.7 } },
-          { id: "prospectivity", type: "raster", source: "prospectivity", layout: { visibility: "none" }, paint: { "raster-opacity": 0.6 } },
-          { id: "ndvi", type: "raster", source: "ndvi", layout: { visibility: "none" }, paint: { "raster-opacity": 0.65 } },
-        ],
+        layers: [{ id: "osm", type: "raster", source: "osm" }],
       },
       center: [79.85, 21.8],
       zoom: 8,
     });
+
+    mapRef.current.addControl(new maplibregl.NavigationControl(), "top-right");
   }, []);
 
-  // Handle layer visibility changes
+  // Center on active mine if selected
+  useEffect(() => {
+    if (!mapRef.current || !mine) return;
+    mapRef.current.flyTo({ center: [mine.longitude, mine.latitude], zoom: 10, essential: true });
+  }, [mine]);
+
+  // Render all mine markers
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Hide all base layers
-    ["osm", "satellite", "sentinel2"].forEach((layer) => {
-      try {
-        mapRef.current!.setLayoutProperty(layer, "visibility", "none");
-      } catch {
-        // Layer might not exist yet
+    // Clear previous mine markers
+    mineMarkersRef.current.forEach((m) => m.remove());
+    mineMarkersRef.current = [];
+
+    const minesToDisplay = allMines.length > 0 ? allMines : (mine ? [mine] : []);
+
+    minesToDisplay.forEach((m) => {
+      const isSelected = mine?.id === m.id;
+      const el = document.createElement("div");
+      el.style.cursor = "pointer";
+      el.innerHTML = isSelected
+        ? `<div style="background:#38bdf8;width:18px;height:18px;border-radius:50%;border:2.5px solid white;box-shadow:0 0 12px #38bdf8;animation:pulse 2s infinite"></div>`
+        : `<div style="background:#0284c7;width:12px;height:12px;border-radius:50%;border:2px solid #e0f2fe;box-shadow:0 0 4px #0284c7"></div>`;
+
+      if (onSelectMine) {
+        el.addEventListener("click", () => onSelectMine(m));
       }
+
+      const popupHtml = `
+        <div style="font-family:sans-serif;padding:4px">
+          <strong style="color:${isSelected ? "#38bdf8" : "#0284c7"}">${m.name}</strong><br/>
+          <span style="font-size:11px;color:#94a3b8">${m.mine_type} · ${m.state}</span><br/>
+          <span style="font-size:10px;color:#64748b">Target: ${m.monthly_target_tonnes.toLocaleString()} t/mo</span>
+        </div>
+      `;
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([m.longitude, m.latitude])
+        .setPopup(new maplibregl.Popup({ offset: 12 }).setHTML(popupHtml))
+        .addTo(mapRef.current!);
+
+      mineMarkersRef.current.push(marker);
     });
 
-    // Show selected base layer
-    try {
-      mapRef.current.setLayoutProperty(activeLayer, "visibility", "visible");
-    } catch {
-      // Fallback to OSM
-      setActiveLayer("osm");
-    }
+    return () => {
+      mineMarkersRef.current.forEach((m) => m.remove());
+      mineMarkersRef.current = [];
+    };
+  }, [allMines, mine, onSelectMine]);
 
-    // Handle overlay layers
-    try {
-      mapRef.current.setLayoutProperty(
-        "geology",
-        "visibility",
-        activeLayer === "geology" ? "visible" : "none"
-      );
-      mapRef.current.setLayoutProperty(
-        "prospectivity",
-        "visibility",
-        showProspects ? "visible" : "none"
-      );
-      mapRef.current.setLayoutProperty(
-        "ndvi",
-        "visibility",
-        activeLayer === "ndvi" ? "visible" : "none"
-      );
-    } catch {
-      // Overlays might not exist yet
-    }
-  }, [activeLayer, showProspects]);
-
+  // Prospectivity target markers
   useEffect(() => {
-    if (!mapRef.current || !mine) return;
-    mapRef.current.flyTo({ center: [mine.longitude, mine.latitude], zoom: 11 });
+    if (!mapRef.current || prospectivityTargets.length === 0) return;
 
-    const marker = new maplibregl.Marker({ color: "#38bdf8" })
-      .setLngLat([mine.longitude, mine.latitude])
-      .setPopup(new maplibregl.Popup().setText(`${mine.name} (${mine.mine_type})`))
-      .addTo(mapRef.current);
+    const newMarkers: maplibregl.Marker[] = [];
+
+    prospectivityTargets.forEach((t) => {
+      const color = CONFIDENCE_COLORS[t.confidence] ?? "#94a3b8";
+      const el = document.createElement("div");
+      el.innerHTML = `
+        <div style="
+          background:${color};
+          width:${t.rank <= 3 ? 16 : 12}px;
+          height:${t.rank <= 3 ? 16 : 12}px;
+          border-radius:3px;
+          border:2px solid white;
+          box-shadow:0 0 6px ${color};
+          cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
+          font-size:8px;font-weight:bold;color:white;
+        ">${t.rank}</div>`;
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([t.lon, t.lat])
+        .setPopup(
+          new maplibregl.Popup({ offset: 12 }).setHTML(
+            `<div style="font-family:sans-serif;padding:4px;min-width:160px">
+              <strong style="color:${color}">Target #${t.rank}</strong><br/>
+              <span style="font-size:11px;color:#94a3b8">Probability: ${Math.round(t.probability * 100)}%</span><br/>
+              <span style="font-size:11px;color:#94a3b8">Confidence: ${t.confidence}</span><br/>
+              <span style="font-size:11px;color:#94a3b8">Near: ${t.nearest_mine ?? "—"}</span><br/>
+              <span style="font-size:11px;color:#64748b">Iron oxide: ${t.evidence.iron_oxide_index.toFixed(2)} · NDVI Δ: ${t.evidence.ndvi_anomaly.toFixed(2)}</span>
+            </div>`,
+          ),
+        )
+        .addTo(mapRef.current!);
+
+      newMarkers.push(marker);
+    });
 
     return () => {
-      marker.remove();
+      newMarkers.forEach((m) => m.remove());
     };
-  }, [mine]);
+  }, [prospectivityTargets]);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-700 bg-gray-800/50">
-      {/* Layer Controls */}
-      <div className="bg-gray-900/80 border-b border-gray-700 p-3 space-y-2">
-        <p className="text-xs font-medium text-gray-300">Base Layer</p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveLayer("osm")}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              activeLayer === "osm"
-                ? "bg-blue-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            🗺️ OSM
-          </button>
-          <button
-            onClick={() => setActiveLayer("satellite")}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              activeLayer === "satellite"
-                ? "bg-blue-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            🛰️ Satellite
-          </button>
-          <button
-            onClick={() => setActiveLayer("geology")}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              activeLayer === "geology"
-                ? "bg-blue-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            🪨 Geology
-          </button>
-          <button
-            onClick={() => setActiveLayer("ndvi")}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              activeLayer === "ndvi"
-                ? "bg-blue-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            🌱 NDVI
-          </button>
+    <div className="rounded-xl border border-white/10 bg-slate-800/60 overflow-hidden">
+      {/* Map header with legend */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">🗺️</span>
+          <span className="text-xs font-semibold text-slate-300">Balaghat District, MP</span>
         </div>
-
-        <p className="text-xs font-medium text-gray-300 mt-3">Overlays</p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setShowProspects(!showProspects)}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              showProspects
-                ? "bg-green-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            💎 Prospectivity
-          </button>
-          <button
-            onClick={() => setShowLineaments(!showLineaments)}
-            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-              showLineaments
-                ? "bg-purple-600/80 text-white"
-                : "bg-gray-700/50 text-gray-300 hover:bg-gray-700"
-            }`}
-          >
-            ⚡ Lineaments
-          </button>
+        <div className="flex items-center gap-3 text-[10px] text-slate-400">
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_4px_#38bdf8]" />
+            Active mine
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded bg-amber-400 shadow-[0_0_4px_#f59e0b]" />
+            High confidence target
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded bg-orange-400" />
+            Medium
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded bg-slate-400" />
+            Low
+          </span>
         </div>
       </div>
-
-      {/* Map Container */}
-      <div ref={containerRef} style={{ height: 280, width: "100%" }} />
-
-      {/* Legend */}
-      <div className="bg-gray-900/80 border-t border-gray-700 p-3 text-xs text-gray-400">
-        <p className="text-gray-300 font-medium mb-2">Active Layers:</p>
-        <ul className="space-y-1 text-xs">
-          <li>🔵 Base: <span className="text-blue-400">{activeLayer.toUpperCase()}</span></li>
-          {showProspects && <li>💎 <span className="text-green-400">Prospectivity Heatmap (opacity 60%)</span></li>}
-          {showLineaments && <li>⚡ <span className="text-purple-400">Structural Lineaments</span></li>}
-        </ul>
-      </div>
+      <div ref={containerRef} style={{ height: 360, width: "100%" }} />
     </div>
   );
 }
