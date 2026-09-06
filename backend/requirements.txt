@@ -18,6 +18,13 @@ shapely
 fiona
 pyproj
 
+# SAE-based prospectivity features (tasks 1-3)
+# Stacked Autoencoder training for latent feature extraction.
+# Matches the architecture in Nagar et al. (2024), Advances in Space Research.
+tensorflow>=2.12.0          # SAE training via Keras; CPU-only build is fine
+rioxarray>=0.15.0           # rasterio-backed xarray for cleaner raster I/O
+                             # (used in compute_sae_latent_features loader)
+
 # Optional: For production satellite data fetching
 # earthengine-api  # Requires Google account
 # sentinelhub      # Requires Sentinel Hub account
