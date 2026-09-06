@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
 from . import models  # noqa: F401 - ensures models are registered before create_all
-from .routers import mines, production, forecast, actions, reports, reserve, admin
+from .routers import mines, production, forecast, actions, reports, reserve, admin, prospectivity
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,4 +28,5 @@ app.include_router(forecast.router, prefix="/api", tags=["forecast"])
 app.include_router(actions.router, prefix="/api", tags=["actions"])
 app.include_router(reports.router, prefix="/api", tags=["reports"])
 app.include_router(reserve.router, prefix="/api", tags=["reserve"])
+app.include_router(prospectivity.router, prefix="/api", tags=["prospectivity"])
 app.include_router(admin.router, prefix="/api", tags=["admin"])

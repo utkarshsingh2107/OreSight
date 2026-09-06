@@ -10,3 +10,15 @@ scikit-learn
 lifelines
 reportlab
 python-multipart
+
+# Geospatial and satellite data processing
+rasterio
+geopandas
+shapely
+fiona
+pyproj
+
+# Optional: For production satellite data fetching
+# earthengine-api  # Requires Google account
+# sentinelhub      # Requires Sentinel Hub account
+# pystac-client    # For Microsoft Planetary Computer

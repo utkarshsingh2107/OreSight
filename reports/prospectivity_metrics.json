@@ -1,0 +1,68 @@
+{
+  "auc_roc": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "cv_results": {
+    "auc_roc": {
+      "train_mean": 1.0,
+      "train_std": 4.965068306494546e-17,
+      "test_mean": 0.9357671957671958,
+      "test_std": 0.12846560846560842
+    },
+    "precision": {
+      "test_mean": 0.9942857142857143,
+      "test_std": 0.011428571428571432
+    },
+    "recall": {
+      "test_mean": 0.8518518518518519,
+      "test_std": 0.2962962962962963
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "distance_to_mines_km",
+      "importance": 0.78295864243045
+    },
+    {
+      "feature": "iron_oxide",
+      "importance": 0.05680207686266156
+    },
+    {
+      "feature": "swir",
+      "importance": 0.027565432867547042
+    },
+    {
+      "feature": "aspect",
+      "importance": 0.024159694349581297
+    },
+    {
+      "feature": "slope",
+      "importance": 0.020195535906198655
+    },
+    {
+      "feature": "curvature",
+      "importance": 0.020092511104161246
+    },
+    {
+      "feature": "clay",
+      "importance": 0.020042294256262493
+    },
+    {
+      "feature": "ndvi",
+      "importance": 0.01951606109241756
+    },
+    {
+      "feature": "elevation",
+      "importance": 0.019345705841895974
+    },
+    {
+      "feature": "distance_to_lineaments",
+      "importance": 0.009322045288824146
+    }
+  ],
+  "n_estimators": 200,
+  "max_depth": 15,
+  "n_samples": 660,
+  "n_features": 10
+}
