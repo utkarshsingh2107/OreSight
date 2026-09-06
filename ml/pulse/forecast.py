@@ -39,6 +39,11 @@ FEATURE_COLUMNS = [
     "rainfall_today",
     "rainfall_7d_sum",
     "rainfall_30d_sum",
+    "soil_moisture",              # NEW: EO constraint
+    "soil_moisture_7d_avg",       # NEW: EO constraint
+    "temperature_max_c",          # NEW: EO constraint
+    "temperature_7d_avg",         # NEW: EO constraint
+    "ndvi",                       # NEW: EO constraint
     "equipment_downtime_hours",
     "downtime_7d_sum",
     "lag_1_tonnes",
@@ -54,6 +59,11 @@ FRIENDLY_NAMES = {
     "rainfall_today": "Rainfall (today)",
     "rainfall_7d_sum": "Rainfall (7-day trailing)",
     "rainfall_30d_sum": "Rainfall (30-day trailing)",
+    "soil_moisture": "Soil Moisture (Sentinel-1/SMAP)",           # NEW
+    "soil_moisture_7d_avg": "Soil Moisture (7-day avg)",         # NEW
+    "temperature_max_c": "Temperature (MODIS LST)",              # NEW
+    "temperature_7d_avg": "Temperature (7-day avg)",             # NEW
+    "ndvi": "Vegetation Index (Sentinel-2 NDVI)",                # NEW
     "equipment_downtime_hours": "Equipment downtime (today)",
     "downtime_7d_sum": "Equipment downtime (7-day trailing)",
     "lag_1_tonnes": "Yesterday's output",
@@ -77,7 +87,15 @@ _MODEL_CACHE: dict[tuple[int, int], TrainedForecastModel] = {}
 
 def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """df must be sorted by date ascending with columns: date, tonnes,
-    rainfall_mm, equipment_downtime_hours, is_holiday."""
+    rainfall_mm, equipment_downtime_hours, is_holiday.
+    
+    NEW (v2): Also accepts optional EO constraint columns:
+    - soil_moisture
+    - temperature_max_c
+    - ndvi
+    
+    If not present, fills with neutral default values.
+    """
     out = df.copy().reset_index(drop=True)
     out["date"] = pd.to_datetime(out["date"])
     out["day_of_week"] = out["date"].dt.dayofweek
@@ -85,6 +103,23 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     out["rainfall_today"] = out["rainfall_mm"]
     out["rainfall_7d_sum"] = out["rainfall_mm"].rolling(7, min_periods=1).sum()
     out["rainfall_30d_sum"] = out["rainfall_mm"].rolling(30, min_periods=1).sum()
+    
+    # NEW: EO constraints (with fallback if not present)
+    if "soil_moisture" in out.columns:
+        out["soil_moisture_7d_avg"] = out["soil_moisture"].rolling(7, min_periods=1).mean()
+    else:
+        out["soil_moisture"] = 0.35  # Neutral default
+        out["soil_moisture_7d_avg"] = 0.35
+    
+    if "temperature_max_c" in out.columns:
+        out["temperature_7d_avg"] = out["temperature_max_c"].rolling(7, min_periods=1).mean()
+    else:
+        out["temperature_max_c"] = 32.0  # Neutral default
+        out["temperature_7d_avg"] = 32.0
+    
+    if "ndvi" not in out.columns:
+        out["ndvi"] = 0.35  # Neutral default
+    
     out["downtime_7d_sum"] = out["equipment_downtime_hours"].rolling(7, min_periods=1).sum()
     out["lag_1_tonnes"] = out["tonnes"].shift(1)
     out["lag_7_tonnes"] = out["tonnes"].shift(7)
@@ -184,6 +219,15 @@ def predict(
     driver_impacts.sort(key=lambda x: abs(x[1]), reverse=True)
     max_abs = max(abs(v) for _, v in driver_impacts) or 1.0
 
+    # Categorize drivers for better UI display
+    def get_category(feature_name: str) -> str:
+        if any(x in feature_name for x in ["rainfall", "soil_moisture", "temperature", "ndvi"]):
+            return "weather"
+        elif "downtime" in feature_name:
+            return "equipment"
+        else:
+            return "operational"
+    
     drivers = []
     for name, val in driver_impacts[:5]:
         drivers.append(
@@ -191,6 +235,7 @@ def predict(
                 "name": FRIENDLY_NAMES.get(name, name),
                 "impact": round(abs(val) / max_abs, 3),
                 "direction": "increases risk" if val < 0 else "decreases risk",
+                "category": get_category(name),  # NEW: for API contract
             }
         )
 
