@@ -79,3 +79,45 @@ class AuditLogOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================================
+# Prospectivity Schemas
+# ============================================================================
+
+class EvidenceOut(BaseModel):
+    """Evidence supporting a prospectivity target"""
+    iron_oxide_index: float
+    ndvi_anomaly: float
+    distance_to_known_mine_km: float
+
+
+class ProspectivityTargetOut(BaseModel):
+    """Exploration target from prospectivity model"""
+    rank: int
+    id: str
+    lat: float
+    lon: float
+    probability: float
+    confidence: str  # "low" | "medium" | "high"
+    nearest_mine: Optional[str] = None
+    distance_to_mine_km: Optional[float] = None
+    evidence: EvidenceOut
+
+
+class ProspectivityTargetsResponse(BaseModel):
+    """Response with list of exploration targets"""
+    targets: list[ProspectivityTargetOut]
+
+
+class FeatureImportanceOut(BaseModel):
+    """Feature importance for target or global model"""
+    feature_name: str
+    importance: float
+    display_name: str
+
+
+class FeatureImportanceResponse(BaseModel):
+    """Response with feature importance list"""
+    target_id: Optional[str] = None
+    feature_importance: list[FeatureImportanceOut]
